@@ -5,7 +5,8 @@ Inverted index search for text documents.
 ## Table of Contents
 * [Introduction](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Introduction)
 * [Program](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Program)
-* [Program Settings](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Program-Settings)
+  * [Caching](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Caching)
+  * [Program Settings](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Program-Settings)
 * [Features](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Features)
 * [Potential Improvements](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Potential-Improvements)
 * [Modules](https://github.com/AoifeFlanagan/Full-Text-Search-Engine#Modules)
@@ -42,6 +43,21 @@ Here, 1 refers to the document identifier and 3 refers to the frequency of which
 
 The user can then perform a search, using a comma to separate terms if searching multiple terms. The terms entered are then cleaned and looked within the inverted index dictionary. If the cleaned terms are found within the dictionary, results are then presented to the user.
 
+### Caching 
+
+For every directory, the document database and the associated inverted index dictionary are stored. The purpose of which is to speed up searching for the user.
+
+If a user were to perform a search on a directory where a search has already taken place, the program will first check to see if the number of text documents has been altered.
+
+If the number of text files is different to the number that is stored within the database, a new database will be generated and consequently an inverted index dictionary.
+
+In the scenario where the number of files within the directory remains the same, the SHA1 checksum of each document within the directory is compared with those stored within the database. 
+
+If any of the text files have been altered in any way, this will be apparent due to a differing SHA1 checksum and consequently, a new database and inverted index dictionary is generated. 
+
+In any of the cases where a new database and inverted index dictionary is newly generated, this will update the cached data. 
+
+
 ## Program Settings
 
 At the command line, this program can be run with various options enabled.
@@ -54,7 +70,7 @@ By default this program will search the current working directory for text files
 
 With the argument `-v`, the program will print out additional information for the interested user.
 
-This comprises of the document database and the underyling inverted index dictionary. 
+This comprises of the document database, the underyling inverted index dictionary and the cached directories. 
 
 ### `-h`
 
@@ -65,11 +81,13 @@ Provides general help information for the user.
 - Design pattern follows OOP
 - Unit testing content provided, run `inv_testing.py` contained within the folder `unit_test` and with all the included files and subdirectories
 - Optional arguments can be entered at the command line allowing additional functionality
+- SHA1 encoding leveraged for caching results due to low clock cycles per a byte for a CPU
 - Search returns the term along with the name of the text document and the frequency of the term
 - Inverted index stored as a dictionary allowing fast queries
 - If a subsequent search is attempted on the same directory, the dictionary persists allowing for fast results
 - Status updates presented to the user
 - Can re-search either within current directory or a new, user specified directory
+- If the same term is entered multiple times, only one result will be presented to the user
 - If no text files found, user will be asked to specify a different directory, even if `-d` was not entered at the command line
 - Error handling on choosing a directory
   - If a directory does not exist or has been entered incorrectly, the user will be notified
@@ -86,6 +104,7 @@ Provides general help information for the user.
 - `os`
 - `re`
 - `argparse`
+- `hashlib`
 - `string`
 - `nltk`
 - `IPython.display`
