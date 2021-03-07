@@ -2,6 +2,7 @@
 import os
 import re
 import argparse
+import hashlib
 import string
 import nltk
 from IPython.display import clear_output
@@ -19,8 +20,10 @@ class Document():
         self.doc_id = doc_id
         self.cleaned_text = ""
 
-        with open(file_path) as f:
+        with open(file_path, "r") as f:
             self.text = f.read()
+            encoding = hashlib.sha1(bytes(self.text, "utf-8"))
+            self.sha1 = encoding.hexdigest()
 
     def __str__(self):
         """String representation of the file name."""
@@ -50,7 +53,7 @@ class Database():
         file_names = []
 
         for i in self.db:
-            file_names.append(str((i.doc_id, str(i))))
+            file_names.append(str((i.doc_id, str(i), i.sha1)))
         return "\n".join(file_names)
 
     def add(self, document):
@@ -82,17 +85,18 @@ class Inverted_Index():
 
     def __str__(self):
         """String representation of the inverted index dictionary"""
-        dic = []
+        holder = []
         for item in self.dictionary.items():
-            dic.append(str(item))
+            holder.append(str(item))
 
-        return "\n".join(dic)
+        return "\n".join(holder)
 
     def unique_word_list(self, database):
         """Creates a unique word list for text documents"""
 
         for doc in database:
-            separated_words = doc.cleaned_text.split(" ")
+            if len(doc.cleaned_text.strip()) != 0:
+                separated_words = doc.cleaned_text.split(" ")
 
             for word in separated_words:
                 if word not in self.unique_words:
@@ -138,6 +142,26 @@ class Inverted_Index():
                     print(word)
 
 
+class Caching():
+    """Caches document and inverted index database"""
+
+    def __init__(self):
+        self.dict = {}
+
+    def __str__(self):
+        """String representation of the cached results dictionary"""
+
+        holder = []
+        for key in self.dict.keys():
+            holder.append(str(key))
+        return "\n".join(holder)
+
+    def add(self, directory, doc_database, inv_database):
+        """Adds content to the cache dictionary"""
+
+        self.dict.update({directory:(doc_database, inv_database)})
+
+
 def welcome():
     """Prints a welcome message."""
 
@@ -169,7 +193,7 @@ def specify_directory():
             break
 
 
-def build_db(database, d_id=0):
+def build_db(database, d_id=0, mode=0):
     """Creates a text document database, default document id starting at 0."""
 
     for folders, subfolders, files in os.walk(os.getcwd()):
@@ -180,7 +204,8 @@ def build_db(database, d_id=0):
                 d_id += 1
                 document.clean_text()
                 database.add(document)
-                print(f"{document.file_name} added")
+                if mode == 0:
+                    print(f"{document.file_name} added")
 
 
 def clean(text):
@@ -209,6 +234,7 @@ def replay():
     """Asks user if they would like to conduct another search in the same or different directory."""
 
     global search
+    global directory
     global directory_choice
     global indexing
     ask = True
@@ -221,7 +247,7 @@ def replay():
                 print("Please enter in y/n/q!")
 
             elif answer.lower()[0] == "y":
-                search_location = input("Would you like to change directory? (y/n)")
+                search_location = input("Would you like to change directory? (y/n)\n")
 
                 if search_location.lower()[0] not in ("y", "n"):
                     print("Please enter in y/n!")
@@ -233,6 +259,8 @@ def replay():
                     return True
 
                 else:
+                    directory_check = True
+                    directory = os.getcwd()
                     ask = False
                     return True
 
@@ -244,9 +272,12 @@ def replay():
         except:
             print("Please enter in y/n/q!")
 
+
 search = True
+database_check = False
 indexing = False
 current_directory = ""
+cache = Caching()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", help="If user would like to specify a directory", action="store_true")
@@ -280,40 +311,70 @@ while search:
 
         else:
             directory_choice = False
-            database_creation = True
+            database_check = True
 
-    while database_creation:
-        if current_directory == os.getcwd():
-            print("Database already created!\nSkipping to search!")
-            database_creation = False
-            indexing = True
-            break
+    while database_check:
+        if directory in cache.dict.keys():
+            test_db = Database()
+            build_db(test_db, 0, 1)
 
-        else:
-            database = Database()
-            inverted_index = Inverted_Index()
-            print("\nAttempting to create text document database...")
-            build_db(database)
-
-            if database.total == 0:
-                clear_output()
-                print("No text files were found, please check your directory!")
-                directory_choice = True
-                database_creation = False
+            if database.total != test_db.total:
+                print("We will create a new inverted index database on this current directory")
+                database_check = False
+                database_creation = True
+                break
 
             else:
-                database_creation = False
-                indexing = True
-                inverted_index.unique_word_list(database)
-                print("\nCreating inverted index dicitonary...")
-                inverted_index.inverted_index_db(database)
-                current_directory = os.getcwd()
-                print("Now we're ready for your search!")
+                sha1_count = 0
+                for index, item in enumerate(test_db.db):
+                    if database.db[index].sha1 == item.sha1:
+                        sha1_count += 1
+
+                if sha1_count == database.total:
+                    print("Database already created!\nSkipping to search!\n")
+                    database = cache.dict[directory][0]
+                    inverted_index = cache.dict[directory][1]
+                    database_check = False
+                    database_creation = False
+                    indexing = True
+                    break
+
+                else:
+                    print("Files within this directory have been changed!")
+                    print("We will create a new inverted index database on this current directory!")
+                    database_check = False
+                    database_creation = True
+        else:
+            database_check = False
+            database_creation = True
+            break
+
+    while database_creation:
+        database = Database()
+        inverted_index = Inverted_Index()
+        print("\nAttempting to create text document database...")
+        build_db(database)
+
+        if database.total == 0:
+            clear_output()
+            print("No text files were found, please check your directory!")
+            directory_choice = True
+            database_check = False
+
+        else:
+            database_creation = False
+            indexing = True
+            inverted_index.unique_word_list(database)
+            print("\nCreating inverted index dicitonary...")
+            inverted_index.inverted_index_db(database)
+            cache.add(os.getcwd(), database, inverted_index)
+            print("Now we're ready for your search!\n")
 
     while indexing:
         if args.v:
             print(f"The database of text documents currently holds:\n{database}\n")
-            print(f"The underlying inverted index dictionary:\n{inverted_index}")
+            print(f"The underlying inverted index dictionary:\n{inverted_index}\n")
+            print(f"The current cached databases are: \n{cache}")
 
         print("\nEnter 'q' to quit the search any time.")
         term = input("Provide terms you would like to serch, separated by a comma: ")
@@ -328,10 +389,12 @@ while search:
             print("\nPlease specify at least one term!")
 
         else:
+            term_list = list(set([c.strip() for c in term.split(",") if len(c.strip()) != 0]))
             clear_output()
-            inverted_index.index_search(term.split(","), database)
+            inverted_index.index_search(term_list, database)
 
             if replay():
+                database_check = True
                 break
 
             else:
