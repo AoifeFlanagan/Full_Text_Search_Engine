@@ -82,9 +82,9 @@ Provides general help information for the user.
 - Unit testing content provided, run `inv_testing.py` contained within the folder `unit_test` and with all the included files and subdirectories
 - Optional arguments can be entered at the command line allowing additional functionality
 - SHA1 encoding leveraged for caching results due to low clock cycles per a byte for a CPU
+- Checks are performed for both alterations to the file names and the file contents
 - Search returns the term along with the name of the text document and the frequency of the term
 - Inverted index stored as a dictionary allowing fast queries
-- If a subsequent search is attempted on the same directory, the dictionary persists allowing for fast results
 - Status updates presented to the user
 - Can re-search either within current directory or a new, user specified directory
 - If the same term is entered multiple times, only one result will be presented to the user
