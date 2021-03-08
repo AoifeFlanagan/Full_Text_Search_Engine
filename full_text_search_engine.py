@@ -93,7 +93,8 @@ class Inverted_Index():
 
     def unique_word_list(self, database):
         """Creates a unique word list for text documents"""
-
+        
+        separated_words = []
         for doc in database:
             if len(doc.cleaned_text.strip()) != 0:
                 separated_words = doc.cleaned_text.split(" ")
@@ -247,7 +248,7 @@ def replay():
                 print("Please enter in y/n/q!")
 
             elif answer.lower()[0] == "y":
-                search_location = input("Would you like to change directory? (y/n)\n")
+                search_location = input("Would you like to change directory? (y/n)")
 
                 if search_location.lower()[0] not in ("y", "n"):
                     print("Please enter in y/n!")
@@ -319,11 +320,19 @@ while search:
             build_db(test_db, 0, 1)
 
             if database.total != test_db.total:
-                print("We will create a new inverted index database on this current directory")
+                print("\nThe number of files contained within the directory has changed", end=", ")
+                print("we will generate a new inverted index database on this current directory!")
                 database_check = False
                 database_creation = True
                 break
-
+                
+            elif [c.file_name for c in database.db] != [c.file_name for c in test_db.db]:
+                print("\nOne or more file names have been altered!", end =", ")
+                print("we will generate a new inverted index database on this current directory!")
+                database_check = False
+                database_creation = True
+                break
+                
             else:
                 sha1_count = 0
                 for index, item in enumerate(test_db.db):
@@ -340,7 +349,7 @@ while search:
                     break
 
                 else:
-                    print("Files within this directory have been changed!")
+                    print("\nFiles within this directory have been changed!")
                     print("We will create a new inverted index database on this current directory!")
                     database_check = False
                     database_creation = True
