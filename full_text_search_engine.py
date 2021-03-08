@@ -327,7 +327,7 @@ while search:
                 break
                 
             elif [c.file_name for c in database.db] != [c.file_name for c in test_db.db]:
-                print("\nOne or more file names have been altered!", end =", ")
+                print("\nOne or more file names have been altered", end =", ")
                 print("we will generate a new inverted index database on this current directory!")
                 database_check = False
                 database_creation = True
@@ -410,4 +410,4 @@ while search:
                 print("\nThank you for using this full text search engine!")
                 indexing = False
                 break
-                
+               
