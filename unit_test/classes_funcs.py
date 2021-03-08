@@ -82,17 +82,19 @@ class Inverted_Index():
 
     def __str__(self):
         """String representation of the inverted index dictionary"""
-        dic = []
+        holder = []
         for item in self.dictionary.items():
-            dic.append(str(item))
+            holder.append(str(item))
 
-        return "\n".join(dic)
+        return "\n".join(holder)
 
     def unique_word_list(self, database):
         """Creates a unique word list for text documents"""
 
+        separated_words = []
         for doc in database:
-            separated_words = doc.cleaned_text.split(" ")
+            if len(doc.cleaned_text.strip()) != 0:
+                separated_words = doc.cleaned_text.split(" ")
 
             for word in separated_words:
                 if word not in self.unique_words:
@@ -136,7 +138,6 @@ class Inverted_Index():
             for word in not_found:
                 if word.strip() != "":
                     print(word)
-
 
 def welcome():
     """Prints a welcome message."""
