@@ -21,14 +21,35 @@ class Full_Text_Search_Test(unittest.TestCase):
         
         print("Verifying document attributes are added correctly to the database...")
         directory = os.getcwd()
+        path = directory + "\\" + "empty.txt"
+        test_doc1 = classes_funcs.Document("empty.txt", path, 1)
+        
         path = directory + "\\" + "testme.txt"    
-        test_doc = classes_funcs.Document("testme.txt", path, 1)
+        test_doc2 = classes_funcs.Document("testme.txt", path, 2)
+        
+        test_database = [test_doc1, test_doc2]
+        test_attributes = []
+        
+        for item in test_database:
+            test_attributes.append(item.file_name)
+            test_attributes.append(item.file_path)
+            test_attributes.append(item.doc_id)
+            test_attributes.append(item.text)   
         
         database = classes_funcs.Database()
         classes_funcs.build_db(database, 1)
-        result = (database.db[0].file_name, database.db[0].file_path, database.db[0].doc_id, database.db[0].text)
         
-        self.assertEqual(result, (test_doc.file_name, test_doc.file_path, test_doc.doc_id, test_doc.text))
+        database_attributes = []
+        for item in database:
+            database_attributes.append(item.file_name)
+            database_attributes.append(item.file_path)
+            database_attributes.append(item.doc_id)
+            database_attributes.append(item.text)    
+            
+        result = database_attributes
+        
+        self.assertEqual(result, test_attributes)
+        
         print("\n[+] Document attributes are correct!\n")
         
     def test_unique_word_list(self):
@@ -54,11 +75,14 @@ class Full_Text_Search_Test(unittest.TestCase):
     def test_dictionary(self):
         """Checks if inverted index dictionary is generated correctly"""
         
-        test_dictionary = {'wrong': [(0, 1)], 'point': [(0, 1)], 'avoid': [(0, 2)], 'fruit': [(0, 2)], 'learn': [(0, 2)]}
-        test_dictionary.update({'life': [(0, 1)], 'passage': [(0, 1)], 'however': [(0, 1)], 'besides': [(0, 1)], 'invited': [(0, 1)]})
-        test_dictionary.update({'comfort': [(0, 1)], 'elderly': [(0, 1)]})
+        test_dictionary = {'wrong': [(0, 0), (1, 1)], 'point': [(0, 0), (1, 1)], 'avoid': [(0, 0), (1, 2)]}
+        test_dictionary.update({'fruit': [(0, 0), (1, 2)], 'learn': [(0, 0), (1, 2)], 'life': [(0, 0), (1, 1)]})
+        test_dictionary.update({'passage': [(0, 0), (1, 1)], 'however': [(0, 0), (1, 1)], 'besides': [(0, 0), (1, 1)]})
+        test_dictionary.update({'invited': [(0, 0), (1, 1)], 'comfort': [(0, 0), (1, 1)], 'elderly': [(0, 0), (1, 1)]})
+
         database = classes_funcs.Database()
         inverted_index = classes_funcs.Inverted_Index()
+        
         print("Adding the following text files for testing the inverted index dictionary...")
         classes_funcs.build_db(database)
         inverted_index.unique_word_list(database)
